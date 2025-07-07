@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="https://glitch.com/favicon.ico" />
+    <title>Visualizador 3D - UFR</title>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+          "three/examples/jsm/": "https://unpkg.com/three@0.165.0/examples/jsm/"
+        }
+      }
+    </script>
+
+    <link rel="stylesheet" href="style.css" />
+    <script type="module" src="script.js" defer></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Visualizador 3D muito bom que serve para visualizar em 3D os arquivos que não dá de visualizar sem um visualizador 3D</h1>
+        <p>Selecione um modelo da lista ou arraste um arquivo (.STL) para a área de visualização.</p>
+
+        <select id="stl-selector">
+            <option value="">-- Selecione um modelo da lista --</option>
+            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Montagem%20final.stl?v=1750269750409">PROJETO COMPLETO (Apenas para visualização)</option>
+            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%201.stl?v=1750219411177">Item 1 - Volante</option>
+            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%202%20-%20V2.stl?v=1750219431712">Item 2 - Carro móvel</option>
+            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%203.stl?v=1750219436971">Item 3 - Tampa do carro</option>
+            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%204.stl?v=1750219439709">Item 4 - Peça 4</option>
+            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%205.stl?v=1750219442386">Item 5 - Peça 5</option>
+            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%207.stl?v=1750219446455">Item 7 - Peça 7</option>
+            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%208.stl?v=1750219449527">Item 8 - Peça 8</option>
+            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%209%20-%20V2.stl?v=1750219453038">Item 9 - Estrutura do LCD</option>
+        </select>
+        
+        <div class="toolbar">
+            <div class="toolbar-group">
+                <label class="theme-switch"><input type="checkbox" id="theme-toggle"><span class="slider round"></span></label>
+                <label class="label-for-check">Modo Escuro</label>
+            </div>
+            <div class="toolbar-group">
+                <input type="checkbox" id="grid-toggle">
+                <label for="grid-toggle" class="label-for-check">Grade</label>
+            </div>
+            <div class="toolbar-group">
+                <button id="measure-btn">Medir</button>
+                <button id="clear-measure-btn">Limpar</button>
+            </div>
+            <button id="reset-view-btn">Resetar Vista</button>
+        </div>
+
+        <div id="viewer-container">
+            <canvas id="c"></canvas>
+            <div id="labels"></div>
+            <div id="loader-overlay" class="hidden"><div class="loader-spinner"></div><div class="drag-text"></div></div>
+        </div>
+
+        <div class="info-section">
+             <div class="info-item">
+                <span>Dimensões (mm)</span>
+                <strong id="model-dims">X: -, Y: -, Z: -</strong>
+            </div>
+            <div class="info-item">
+                <span>Volume (cm³)</span>
+                <strong id="model-volume">-</strong>
+            </div>
+            <div class="info-item">
+                <span>Área (cm²)</span>
+                <strong id="model-area">-</strong>
+            </div>
+        </div>
+
+        <div class="estimator-section">
+            <h2>Estimativa de Tempo de Impressão (Beta)</h2>
+            <div class="disclaimer">
+                <strong>Atenção:</strong> Esta é uma estimativa aproximada e não substitui um fatiador (slicer) configurado para sua impressora.
+            </div>
+            <div class="estimator-controls">
+                <div class="control-item">
+                    <label for="resolution-slider">Resolução (mm)</label>
+                    <div class="slider-group">
+                        <input type="range" id="resolution-slider" min="0.08" max="0.4" step="0.02" value="0.2">
+                        <input type="number" id="resolution-input" min="0.08" max="0.4" step="0.02" value="0.2">
+                    </div>
+                </div>
+                <div class="control-item">
+                    <label for="infill-slider">Preenchimento (%)</label>
+                    <div class="slider-group">
+                        <input type="range" id="infill-slider" min="0" max="100" step="5" value="20">
+                        <input type="number" id="infill-input" min="0" max="100" step="5" value="20">
+                    </div>
+                </div>
+                <div class="control-item">
+                    <label for="walls-slider">Paredes (mm)</label>
+                    <div class="slider-group">
+                        <input type="range" id="walls-slider" min="0.3" max="2.5" step="0.1" value="0.3">
+                        <input type="number" id="walls-input" min="0.3" max="2.5" step="0.1" value="0.3">
+                    </div>
+                </div>
+            </div>
+            <div class="estimator-result">
+                Tempo Estimado: <span id="time-estimate">N/A</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
