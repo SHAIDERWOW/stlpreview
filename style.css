@@ -85,7 +85,6 @@ select {
 .toolbar button:hover, .axis-btn:hover { background-color: var(--button-hover-bg); }
 .toolbar button.active, .axis-btn.active { border-color: var(--accent-color); color: var(--accent-color); }
 
-/* Controles do Plano de Corte */
 #clipping-controls { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; flex-grow: 1; }
 #clipping-controls.hidden { display: none; }
 .clipping-slider-group { flex-grow: 1; display: flex; align-items: center; }
