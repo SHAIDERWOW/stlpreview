@@ -34,7 +34,7 @@ const gridHelper = new THREE.GridHelper(100, 20), initialCameraPosition = new TH
 scene.add(gridHelper);
 
 // --- PLANOS DE CORTE ---
-const clippingPlanes = [ new THREE.Plane(new THREE.Vector3(1, 0, 0), 0) ];
+const clippingPlanes = [ new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0) ];
 let activeClipAxis = 'x';
 
 function init() {
@@ -42,8 +42,8 @@ function init() {
     renderer.setPixelRatio(window.devicePixelRatio);
     camera.position.copy(initialCameraPosition);
     controls.enableDamping = true;
-    controls.minPolarAngle = 0; // Permite rotação completa
-    controls.maxPolarAngle = Math.PI; // Permite rotação completa
+    controls.minPolarAngle = 0;
+    controls.maxPolarAngle = Math.PI;
     scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.5));
     const mainLight = new THREE.DirectionalLight(0xffffff, 1.5);
     mainLight.position.set(20, 50, 30);
@@ -197,22 +197,142 @@ function fitCameraToObject(object, offset = 1.5) {
     controls.update();
 }
 
-function updateInfoDisplay(group) { /* ...código sem alteração... */ }
-const labelRenderer = new CSS2DRenderer(); /* ...código sem alteração... */
-let isMeasuring = false, measurementPoints = []; /* ...código sem alteração... */
-const measurementGroup = new THREE.Group(); /* ...código sem alteração... */
-const previewMarker = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({ color: 0xffa500, transparent: true, opacity: 0.7 })); /* ...código sem alteração... */
-const isTouchDevice = 'ontouchstart' in window; /* ...código sem alteração... */
-function startMeasuring() { /* ...código sem alteração... */ }
-function stopMeasuring() { /* ...código sem alteração... */ }
-function clearMeasurements() { /* ...código sem alteração... */ }
-viewerContainer.addEventListener('pointerdown', (event) => { /* ...código sem alteração... */ });
-viewerContainer.addEventListener('pointermove', (event) => { /* ...código sem alteração... */ });
-function getMeshVolume(geometry) { /* ...código sem alteração... */ }
-function getMeshSurfaceArea(geometry) { /* ...código sem alteração... */ }
-function updateEstimate() { /* ...código sem alteração... */ }
+function updateInfoDisplay(group) {
+    if (!group || group.children.length === 0) {
+        modelDimsSpan.textContent = `X: -, Y: -, Z: -`;
+        modelVolumeSpan.textContent = '-';
+        modelAreaSpan.textContent = '-';
+        return;
+    }
+    const box = new THREE.Box3().setFromObject(group);
+    const size = box.getSize(new THREE.Vector3());
+    modelDimsSpan.textContent = `X: ${size.x.toFixed(1)}, Y: ${size.y.toFixed(1)}, Z: ${size.z.toFixed(1)}`;
+    let totalVolume = 0;
+    let totalSurfaceArea = 0;
+    group.traverse(child => {
+        if (child.isMesh) {
+            totalVolume += getMeshVolume(child.geometry);
+            totalSurfaceArea += getMeshSurfaceArea(child.geometry);
+        }
+    });
+    modelVolumeSpan.textContent = (totalVolume / 1000).toFixed(2);
+    modelAreaSpan.textContent = (totalSurfaceArea / 100).toFixed(2);
+}
 
-// --- LÓGICA DO PLANO DE CORTE ---
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(viewerContainer.clientWidth, viewerContainer.clientHeight);
+labelRenderer.domElement.id = 'labels';
+viewerContainer.appendChild(labelRenderer.domElement);
+const raycaster = new THREE.Raycaster(), mouse = new THREE.Vector2();
+let isMeasuring = false, measurementPoints = [];
+const measurementGroup = new THREE.Group();
+scene.add(measurementGroup);
+const previewMarker = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({ color: 0xffa500, transparent: true, opacity: 0.7 }));
+previewMarker.visible = false;
+scene.add(previewMarker);
+const isTouchDevice = 'ontouchstart' in window;
+
+function startMeasuring() { isMeasuring = true; controls.enabled = false; measureBtn.classList.add('active'); viewerContainer.style.cursor = 'crosshair'; }
+function stopMeasuring() { isMeasuring = false; controls.enabled = true; measureBtn.classList.remove('active'); viewerContainer.style.cursor = 'default'; measurementPoints = []; previewMarker.visible = false; }
+function clearMeasurements() { while (measurementGroup.children.length > 0) measurementGroup.remove(measurementGroup.children[0]); }
+
+viewerContainer.addEventListener('pointerdown', (event) => {
+    if (!isMeasuring || !previewMarker.visible) return;
+    const point = previewMarker.position.clone();
+    measurementPoints.push(point);
+    const markerSize = isTouchDevice ? 0.8 : 0.5;
+    const marker = new THREE.Mesh(new THREE.SphereGeometry(markerSize), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+    marker.position.copy(point);
+    measurementGroup.add(marker);
+    if (measurementPoints.length === 2) {
+        const [p1, p2] = measurementPoints;
+        const distance = p1.distanceTo(p2);
+        const dx = Math.abs(p1.x - p2.x), dy = Math.abs(p1.y - p2.y), dz = Math.abs(p1.z - p2.z);
+        const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([p1, p2]), new THREE.LineBasicMaterial({ color: 0xff0000 }));
+        measurementGroup.add(line);
+        const labelDiv = document.createElement('div');
+        labelDiv.className = 'measurement-label';
+        labelDiv.innerHTML = `Distância: ${distance.toFixed(2)} mm<br>&Delta;X: ${dx.toFixed(2)}, &Delta;Y: ${dy.toFixed(2)}, &Delta;Z: ${dz.toFixed(2)}`;
+        const label = new CSS2DObject(labelDiv);
+        label.position.copy(p1).lerp(p2, 0.5);
+        measurementGroup.add(label);
+        stopMeasuring();
+    }
+});
+
+viewerContainer.addEventListener('pointermove', (event) => {
+    if (!isMeasuring) return;
+    const rect = viewerContainer.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(modelGroup.children, true);
+    if (intersects.length > 0) {
+        previewMarker.position.copy(intersects[0].point);
+        previewMarker.visible = true;
+    } else {
+        previewMarker.visible = false;
+    }
+});
+
+function getMeshVolume(geometry) {
+    if (!geometry.isBufferGeometry) return 0;
+    let position = geometry.attributes.position;
+    let triangles = geometry.index ? geometry.index.count / 3 : position.count / 3;
+    let volume = 0;
+    const p1 = new THREE.Vector3(), p2 = new THREE.Vector3(), p3 = new THREE.Vector3();
+    for (let i = 0; i < triangles; i++) {
+        let a, b, c;
+        if (geometry.index) { a = geometry.index.getX(i * 3 + 0); b = geometry.index.getX(i * 3 + 1); c = geometry.index.getX(i * 3 + 2);
+        } else { a = i * 3 + 0; b = i * 3 + 1; c = i * 3 + 2; }
+        p1.fromBufferAttribute(position, a); p2.fromBufferAttribute(position, b); p3.fromBufferAttribute(position, c);
+        volume += p1.dot(p2.clone().cross(p3)) / 6.0;
+    }
+    return Math.abs(volume);
+}
+
+function getMeshSurfaceArea(geometry) {
+    if (!geometry.isBufferGeometry) return 0;
+    let position = geometry.attributes.position;
+    let triangles = geometry.index ? geometry.index.count / 3 : position.count / 3;
+    let area = 0;
+    const p1 = new THREE.Vector3(), p2 = new THREE.Vector3(), p3 = new THREE.Vector3();
+    const v1 = new THREE.Vector3(), v2 = new THREE.Vector3();
+    for (let i = 0; i < triangles; i++) {
+        let a, b, c;
+        if (geometry.index) { a = geometry.index.getX(i * 3 + 0); b = geometry.index.getX(i * 3 + 1); c = geometry.index.getX(i * 3 + 2);
+        } else { a = i * 3 + 0; b = i * 3 + 1; c = i * 3 + 2; }
+        p1.fromBufferAttribute(position, a); p2.fromBufferAttribute(position, b); p3.fromBufferAttribute(position, c);
+        v1.subVectors(p2, p1); v2.subVectors(p3, p1);
+        area += v1.cross(v2).length() * 0.5;
+    }
+    return area;
+}
+
+function updateEstimate() {
+    if (modelGroup.children.length === 0) { timeEstimateSpan.textContent = "N/A"; return; }
+    const layerHeight = parseFloat(resolutionInput.value);
+    const infillPercent = parseFloat(infillInput.value) / 100;
+    const wallThickness = parseFloat(wallsInput.value);
+    const extrusionWidth = 0.4, printSpeed = 60, wallSpeed = 40, travelSpeedFactor = 0.15;
+    let totalVolume = 0, totalSurfaceArea = 0;
+    modelGroup.traverse(child => {
+        if (child.isMesh) { totalVolume += getMeshVolume(child.geometry); totalSurfaceArea += getMeshSurfaceArea(child.geometry); }
+    });
+    if (totalVolume === 0) { timeEstimateSpan.textContent = "Peça sem volume"; return; }
+    const shellVolume = totalSurfaceArea * wallThickness;
+    const infillVolume = Math.max(0, totalVolume - shellVolume) * infillPercent;
+    const shellPrintRate = wallSpeed * extrusionWidth * layerHeight;
+    const infillPrintRate = printSpeed * extrusionWidth * layerHeight;
+    const shellTime = shellPrintRate > 0 ? shellVolume / shellPrintRate : 0;
+    const infillTime = infillPrintRate > 0 ? infillVolume / infillPrintRate : 0;
+    let totalSeconds = shellTime + infillTime;
+    totalSeconds *= (1 + travelSpeedFactor);
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    timeEstimateSpan.textContent = `${h}h ${m}m`;
+}
+
 function updateClippingControls(modelBox) {
     if (!modelBox || modelBox.isEmpty()) return;
     const size = modelBox.getSize(new THREE.Vector3());
@@ -235,7 +355,7 @@ axisButtons.forEach(btn => {
         btn.classList.add('active');
         activeClipAxis = btn.dataset.axis;
         const normal = new THREE.Vector3(0,0,0);
-        normal[activeClipAxis] = -1; // Corta na direção negativa do eixo
+        normal[activeClipAxis] = -1;
         clippingPlanes[0].normal.copy(normal);
         updateClippingControls(new THREE.Box3().setFromObject(modelGroup));
     });
@@ -248,8 +368,6 @@ clippingSlider.addEventListener('input', (e) => {
     clippingPlanes[0].constant = parseFloat(e.target.value) + center[activeClipAxis];
 });
 
-
-// --- EVENT LISTENERS E INICIALIZAÇÃO ---
 selector.addEventListener('change', () => selector.value && loadFromURL(selector.value));
 themeToggle.addEventListener('change', () => updateTheme(themeToggle.checked));
 gridToggle.addEventListener('change', () => { gridHelper.visible = gridToggle.checked; localStorage.setItem('gridVisible', gridToggle.checked); });
