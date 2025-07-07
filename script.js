@@ -22,7 +22,6 @@ const cancelScreenshotBtn = document.getElementById('cancel-screenshot-btn');
 const partsSection = document.querySelector('.parts-section');
 const partsList = document.getElementById('parts-list');
 const partsSectionTitle = partsSection.querySelector('h2');
-// Elementos do Plano de Corte
 const clippingToggle = document.getElementById('clipping-toggle');
 const clippingControls = document.getElementById('clipping-controls');
 const clippingSlider = document.getElementById('clipping-slider');
@@ -34,19 +33,21 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, canvas: canvas }), c
 const gridHelper = new THREE.GridHelper(100, 20), initialCameraPosition = new THREE.Vector3(20, 30, 50);
 scene.add(gridHelper);
 
+// --- PLANOS DE CORTE ---
+const clippingPlanes = [ new THREE.Plane(new THREE.Vector3(1, 0, 0), 0) ];
+let activeClipAxis = 'x';
+
 function init() {
     renderer.setSize(viewerContainer.clientWidth, viewerContainer.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     camera.position.copy(initialCameraPosition);
     controls.enableDamping = true;
-    // ROTAÇÃO LIVRE: Remove os limites de rotação vertical
-    controls.minPolarAngle = 0;
-    controls.maxPolarAngle = Math.PI;
+    controls.minPolarAngle = 0; // Permite rotação completa
+    controls.maxPolarAngle = Math.PI; // Permite rotação completa
     scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.5));
     const mainLight = new THREE.DirectionalLight(0xffffff, 1.5);
     mainLight.position.set(20, 50, 30);
     scene.add(mainLight);
-    // Habilita o corte globalmente
     renderer.localClippingEnabled = true;
 }
 
@@ -86,14 +87,11 @@ function processLoadedObject(object) {
         if (child.isMesh) {
             partsCount++;
             if (!child.material || child.material.name === '') {
-                child.material = new THREE.MeshStandardMaterial({
-                    userData: { isDefaultMaterial: true } 
-                });
+                child.material = new THREE.MeshStandardMaterial({ userData: { isDefaultMaterial: true } });
             }
-            // Habilita o corte para este material
             child.material.clippingPlanes = clippingPlanes;
             child.material.clipShadows = true;
-
+            
             const partItem = document.createElement('li');
             const partName = document.createElement('span');
             partName.className = 'part-name';
@@ -106,10 +104,7 @@ function processLoadedObject(object) {
             toggleBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const part = scene.getObjectByProperty('uuid', e.currentTarget.dataset.uuid);
-                if (part) {
-                    part.visible = !part.visible;
-                    e.currentTarget.classList.toggle('is-hidden', !part.visible);
-                }
+                if (part) { part.visible = !part.visible; e.currentTarget.classList.toggle('is-hidden', !part.visible); }
             });
             partItem.appendChild(partName);
             partItem.appendChild(toggleBtn);
@@ -131,7 +126,7 @@ function processLoadedObject(object) {
     updateModelColors();
     const modelBox = new THREE.Box3().setFromObject(modelGroup);
     gridHelper.position.y = modelBox.min.y;
-    updateClippingPlane(modelBox); // Atualiza os limites do slider de corte
+    updateClippingControls(modelBox);
     updateInfoDisplay(modelGroup);
     updateEstimate();
     fitCameraToObject(modelGroup);
@@ -166,11 +161,8 @@ function loadFromFile(file) {
             }
         } catch (error) { handleError(error); }
     });
-    if (extension === 'gltf') {
-        reader.readAsText(file);
-    } else {
-        reader.readAsArrayBuffer(file);
-    }
+    if (extension === 'gltf') reader.readAsText(file);
+    else reader.readAsArrayBuffer(file);
 }
 
 function handleError(error) { console.error(error); loaderOverlay.classList.add('hidden'); alert('Erro ao carregar o modelo. Verifique o console para mais detalhes.'); }
@@ -199,7 +191,7 @@ function fitCameraToObject(object, offset = 1.5) {
     const fov = camera.fov * (Math.PI / 180);
     let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
     cameraZ *= offset;
-    camera.position.set(center.x + cameraZ, center.y + cameraZ * 0.5, center.z + cameraZ);
+    camera.position.set(center.x, center.y + size.y * 0.2, center.z + cameraZ);
     controls.target.copy(center);
     camera.lookAt(center);
     controls.update();
@@ -207,7 +199,6 @@ function fitCameraToObject(object, offset = 1.5) {
 
 function updateInfoDisplay(group) { /* ...código sem alteração... */ }
 const labelRenderer = new CSS2DRenderer(); /* ...código sem alteração... */
-const raycaster = new THREE.Raycaster(), mouse = new THREE.Vector2(); /* ...código sem alteração... */
 let isMeasuring = false, measurementPoints = []; /* ...código sem alteração... */
 const measurementGroup = new THREE.Group(); /* ...código sem alteração... */
 const previewMarker = new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshBasicMaterial({ color: 0xffa500, transparent: true, opacity: 0.7 })); /* ...código sem alteração... */
@@ -222,17 +213,15 @@ function getMeshSurfaceArea(geometry) { /* ...código sem alteração... */ }
 function updateEstimate() { /* ...código sem alteração... */ }
 
 // --- LÓGICA DO PLANO DE CORTE ---
-const clippingPlanes = [ new THREE.Plane(new THREE.Vector3(1, 0, 0), 0) ];
-let activeClipAxis = 'x';
-
-function updateClippingPlane(modelBox) {
+function updateClippingControls(modelBox) {
+    if (!modelBox || modelBox.isEmpty()) return;
     const size = modelBox.getSize(new THREE.Vector3());
     const center = modelBox.getCenter(new THREE.Vector3());
     const halfSize = size[activeClipAxis] / 2;
     clippingSlider.min = -halfSize;
     clippingSlider.max = halfSize;
-    clippingSlider.value = halfSize; // Começa sem cortar
-    clippingPlanes[0].constant = halfSize + center[activeClipAxis];
+    clippingSlider.value = halfSize;
+    clippingPlanes[0].constant = parseFloat(clippingSlider.value) + center[activeClipAxis];
 }
 
 clippingToggle.addEventListener('change', (e) => {
@@ -245,27 +234,29 @@ axisButtons.forEach(btn => {
         axisButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         activeClipAxis = btn.dataset.axis;
-        const normal = new THREE.Vector3();
-        normal[activeClipAxis] = 1;
+        const normal = new THREE.Vector3(0,0,0);
+        normal[activeClipAxis] = -1; // Corta na direção negativa do eixo
         clippingPlanes[0].normal.copy(normal);
-        updateClippingPlane(new THREE.Box3().setFromObject(modelGroup));
+        updateClippingControls(new THREE.Box3().setFromObject(modelGroup));
     });
 });
 
 clippingSlider.addEventListener('input', (e) => {
+    if (modelGroup.children.length === 0) return;
     const modelBox = new THREE.Box3().setFromObject(modelGroup);
     const center = modelBox.getCenter(new THREE.Vector3());
     clippingPlanes[0].constant = parseFloat(e.target.value) + center[activeClipAxis];
 });
 
-// --- EVENT LISTENERS ---
+
+// --- EVENT LISTENERS E INICIALIZAÇÃO ---
 selector.addEventListener('change', () => selector.value && loadFromURL(selector.value));
 themeToggle.addEventListener('change', () => updateTheme(themeToggle.checked));
 gridToggle.addEventListener('change', () => { gridHelper.visible = gridToggle.checked; localStorage.setItem('gridVisible', gridToggle.checked); });
 measureBtn.addEventListener('click', () => isMeasuring ? stopMeasuring() : startMeasuring());
 clearMeasureBtn.addEventListener('click', clearMeasurements);
 resetViewBtn.addEventListener('click', () => { fitCameraToObject(modelGroup); });
-[resolutionSlider, infillSlider, wallsSlider, resolutionInput, infillInput, wallsInput].forEach(el => { el.addEventListener('input', updateEstimate); });
+[resolutionSlider, infillSlider, wallsSlider, resolutionInput, infillInput, wallsInput].forEach(el => el.addEventListener('input', updateEstimate));
 resolutionSlider.addEventListener('input', () => resolutionInput.value = resolutionSlider.value); resolutionInput.addEventListener('input', () => resolutionSlider.value = resolutionInput.value);
 infillSlider.addEventListener('input', () => infillInput.value = infillSlider.value); infillInput.addEventListener('input', () => infillSlider.value = infillInput.value);
 wallsSlider.addEventListener('input', () => wallsInput.value = wallsSlider.value); wallsInput.addEventListener('input', () => wallsSlider.value = wallsInput.value);
@@ -279,9 +270,33 @@ document.querySelectorAll('.modal-btn').forEach(btn => { btn.addEventListener('c
 
 function showScreenshotModal() { screenshotModal.classList.remove('hidden'); }
 function hideScreenshotModal() { screenshotModal.classList.add('hidden'); }
-function generateScreenshot(background) { /* ...código sem alteração... */ }
+function generateScreenshot(background) {
+    hideScreenshotModal();
+    const originalSize = new THREE.Vector2();
+    renderer.getSize(originalSize);
+    const originalBackground = scene.background;
+    const originalAlpha = renderer.getClearAlpha();
+    const renderWidth = 1920, renderHeight = 1080;
+    renderer.setSize(renderWidth, renderHeight);
+    camera.aspect = renderWidth / renderHeight;
+    camera.updateProjectionMatrix();
+    if (background === 'transparent') { renderer.setClearAlpha(0); scene.background = null; } 
+    else { renderer.setClearAlpha(1); scene.background = new THREE.Color(background); }
+    renderer.render(scene, camera);
+    const dataURL = renderer.domElement.toDataURL('image/png');
+    const link = document.createElement('a');
+    link.href = dataURL;
+    link.download = `captura_modelo_3d.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    renderer.setSize(originalSize.x, originalSize.y);
+    camera.aspect = originalSize.x / originalSize.y;
+    camera.updateProjectionMatrix();
+    scene.background = originalBackground;
+    renderer.setClearAlpha(originalAlpha);
+}
 
-// --- INICIALIZAÇÃO NA CARGA DA PÁGINA ---
 document.addEventListener('DOMContentLoaded', () => {
     const savedTheme = localStorage.getItem('theme');
     const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -295,21 +310,20 @@ document.addEventListener('DOMContentLoaded', () => {
     updateInfoDisplay(null);
 });
 
-window.addEventListener('resize', () => { const { clientWidth, clientHeight } = viewerContainer; camera.aspect = clientWidth / clientHeight; camera.updateProjectionMatrix(); renderer.setSize(clientWidth, clientHeight); labelRenderer.setSize(clientWidth, clientHeight); });
-function animate() { requestAnimationFrame(animate); controls.update(); renderer.render(scene, camera); labelRenderer.render(scene, camera); }
+window.addEventListener('resize', () => {
+    const { clientWidth, clientHeight } = viewerContainer;
+    camera.aspect = clientWidth / clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(clientWidth, clientHeight);
+    labelRenderer.setSize(clientWidth, clientHeight);
+});
+
+function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+    labelRenderer.render(scene, camera);
+}
 
 init();
 animate();
-
-// Para preencher as funções que não mudei, aqui estão elas novamente:
-function updateInfoDisplay(group) { if (!group || group.children.length === 0) { modelDimsSpan.textContent = `X: -, Y: -, Z: -`; modelVolumeSpan.textContent = '-'; modelAreaSpan.textContent = '-'; return; } const box = new THREE.Box3().setFromObject(group); const size = box.getSize(new THREE.Vector3()); modelDimsSpan.textContent = `X: ${size.x.toFixed(1)}, Y: ${size.y.toFixed(1)}, Z: ${size.z.toFixed(1)}`; let totalVolume = 0; let totalSurfaceArea = 0; group.traverse(child => { if (child.isMesh) { totalVolume += getMeshVolume(child.geometry); totalSurfaceArea += getMeshSurfaceArea(child.geometry); } }); modelVolumeSpan.textContent = (totalVolume / 1000).toFixed(2); modelAreaSpan.textContent = (totalSurfaceArea / 100).toFixed(2); }
-labelRenderer.setSize(viewerContainer.clientWidth, viewerContainer.clientHeight); labelRenderer.domElement.id = 'labels'; viewerContainer.appendChild(labelRenderer.domElement);
-function startMeasuring() { isMeasuring = true; controls.enabled = false; measureBtn.classList.add('active'); viewerContainer.style.cursor = 'crosshair'; }
-function stopMeasuring() { isMeasuring = false; controls.enabled = true; measureBtn.classList.remove('active'); viewerContainer.style.cursor = 'default'; measurementPoints = []; previewMarker.visible = false; }
-function clearMeasurements() { while (measurementGroup.children.length > 0) measurementGroup.remove(measurementGroup.children[0]); }
-viewerContainer.addEventListener('pointerdown', (event) => { if (!isMeasuring || !previewMarker.visible) return; const point = previewMarker.position.clone(); measurementPoints.push(point); const markerSize = isTouchDevice ? 0.8 : 0.5; const marker = new THREE.Mesh(new THREE.SphereGeometry(markerSize), new THREE.MeshBasicMaterial({ color: 0xff0000 })); marker.position.copy(point); measurementGroup.add(marker); if (measurementPoints.length === 2) { const [p1, p2] = measurementPoints; const distance = p1.distanceTo(p2); const dx = Math.abs(p1.x - p2.x), dy = Math.abs(p1.y - p2.y), dz = Math.abs(p1.z - p2.z); const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([p1, p2]), new THREE.LineBasicMaterial({ color: 0xff0000 })); measurementGroup.add(line); const labelDiv = document.createElement('div'); labelDiv.className = 'measurement-label'; labelDiv.innerHTML = `Distância: ${distance.toFixed(2)} mm<br>&Delta;X: ${dx.toFixed(2)}, &Delta;Y: ${dy.toFixed(2)}, &Delta;Z: ${dz.toFixed(2)}`; const label = new CSS2DObject(labelDiv); label.position.copy(p1).lerp(p2, 0.5); measurementGroup.add(label); stopMeasuring(); } });
-viewerContainer.addEventListener('pointermove', (event) => { if (!isMeasuring) return; const rect = viewerContainer.getBoundingClientRect(); mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1; mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1; raycaster.setFromCamera(mouse, camera); const intersects = raycaster.intersectObjects(modelGroup.children, true); if (intersects.length > 0) { previewMarker.position.copy(intersects[0].point); previewMarker.visible = true; } else { previewMarker.visible = false; } });
-function getMeshVolume(geometry) { if (!geometry.isBufferGeometry) return 0; let position = geometry.attributes.position; let triangles = geometry.index ? geometry.index.count / 3 : position.count / 3; let volume = 0; const p1 = new THREE.Vector3(), p2 = new THREE.Vector3(), p3 = new THREE.Vector3(); for (let i = 0; i < triangles; i++) { let a, b, c; if (geometry.index) { a = geometry.index.getX(i * 3 + 0); b = geometry.index.getX(i * 3 + 1); c = geometry.index.getX(i * 3 + 2); } else { a = i * 3 + 0; b = i * 3 + 1; c = i * 3 + 2; } p1.fromBufferAttribute(position, a); p2.fromBufferAttribute(position, b); p3.fromBufferAttribute(position, c); volume += p1.dot(p2.clone().cross(p3)) / 6.0; } return Math.abs(volume); }
-function getMeshSurfaceArea(geometry) { if (!geometry.isBufferGeometry) return 0; let position = geometry.attributes.position; let triangles = geometry.index ? geometry.index.count / 3 : position.count / 3; let area = 0; const p1 = new THREE.Vector3(), p2 = new THREE.Vector3(), p3 = new THREE.Vector3(); const v1 = new THREE.Vector3(), v2 = new THREE.Vector3(); for (let i = 0; i < triangles; i++) { let a, b, c; if (geometry.index) { a = geometry.index.getX(i * 3 + 0); b = geometry.index.getX(i * 3 + 1); c = geometry.index.getX(i * 3 + 2); } else { a = i * 3 + 0; b = i * 3 + 1; c = i * 3 + 2; } p1.fromBufferAttribute(position, a); p2.fromBufferAttribute(position, b); p3.fromBufferAttribute(position, c); v1.subVectors(p2, p1); v2.subVectors(p3, p1); area += v1.cross(v2).length() * 0.5; } return area; }
-function updateEstimate() { if (modelGroup.children.length === 0) { timeEstimateSpan.textContent = "N/A"; return; } const layerHeight = parseFloat(resolutionInput.value); const infillPercent = parseFloat(infillInput.value) / 100; const wallThickness = parseFloat(wallsInput.value); const extrusionWidth = 0.4, printSpeed = 60, wallSpeed = 40, travelSpeedFactor = 0.15; let totalVolume = 0, totalSurfaceArea = 0; modelGroup.traverse(child => { if (child.isMesh) { totalVolume += getMeshVolume(child.geometry); totalSurfaceArea += getMeshSurfaceArea(child.geometry); } }); if (totalVolume === 0) { timeEstimateSpan.textContent = "Peça sem volume"; return; } const shellVolume = totalSurfaceArea * wallThickness; const infillVolume = Math.max(0, totalVolume - shellVolume) * infillPercent; const shellPrintRate = wallSpeed * extrusionWidth * layerHeight; const infillPrintRate = printSpeed * extrusionWidth * layerHeight; const shellTime = shellPrintRate > 0 ? shellVolume / shellPrintRate : 0; const infillTime = infillPrintRate > 0 ? infillVolume / infillPrintRate : 0; let totalSeconds = shellTime + infillTime; totalSeconds *= (1 + travelSpeedFactor); const h = Math.floor(totalSeconds / 3600); const m = Math.floor((totalSeconds % 3600) / 60); timeEstimateSpan.textContent = `${h}h ${m}m`; }
-function generateScreenshot(background) { hideScreenshotModal(); const originalSize = new THREE.Vector2(); renderer.getSize(originalSize); const originalBackground = scene.background; const originalAlpha = renderer.getClearAlpha(); const renderWidth = 1920, renderHeight = 1080; renderer.setSize(renderWidth, renderHeight); camera.aspect = renderWidth / renderHeight; camera.updateProjectionMatrix(); if (background === 'transparent') { renderer.setClearAlpha(0); scene.background = null; } else { renderer.setClearAlpha(1); scene.background = new THREE.Color(background); } renderer.render(scene, camera); const dataURL = renderer.domElement.toDataURL('image/png'); const link = document.createElement('a'); link.href = dataURL; link.download = `captura_modelo_3d.png`; document.body.appendChild(link); link.click(); document.body.removeChild(link); renderer.setSize(originalSize.x, originalSize.y); camera.aspect = originalSize.x / originalSize.y; camera.updateProjectionMatrix(); scene.background = originalBackground; renderer.setClearAlpha(originalAlpha); }
