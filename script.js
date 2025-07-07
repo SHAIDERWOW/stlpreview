@@ -26,6 +26,7 @@ const clippingToggle = document.getElementById('clipping-toggle');
 const clippingControls = document.getElementById('clipping-controls');
 const clippingSlider = document.getElementById('clipping-slider');
 const axisButtons = document.querySelectorAll('.axis-btn');
+const viewModeButtons = document.querySelectorAll('.view-mode-btn');
 
 // --- CENA BÁSICA ---
 const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(75, viewerContainer.clientWidth / viewerContainer.clientHeight, 0.1, 1000);
@@ -86,9 +87,17 @@ function processLoadedObject(object) {
     object.traverse((child) => {
         if (child.isMesh) {
             partsCount++;
-            if (!child.material || child.material.name === '') {
-                child.material = new THREE.MeshStandardMaterial({ userData: { isDefaultMaterial: true } });
+            
+            // Armazena o material original e cria materiais alternativos se não existirem
+            child.userData.originalMaterial = child.material;
+            if (!child.userData.normalMaterial) {
+                child.userData.normalMaterial = new THREE.MeshNormalMaterial({ clippingPlanes: clippingPlanes, clipShadows: true });
             }
+            if (!child.material || child.material.name === '' || child.material.isDefault) {
+                child.material = new THREE.MeshStandardMaterial({ userData: { isDefaultMaterial: true } });
+                child.userData.originalMaterial = child.material; // Atualiza o original para o nosso padrão
+            }
+
             child.material.clippingPlanes = clippingPlanes;
             child.material.clipShadows = true;
             
@@ -366,6 +375,27 @@ clippingSlider.addEventListener('input', (e) => {
     const modelBox = new THREE.Box3().setFromObject(modelGroup);
     const center = modelBox.getCenter(new THREE.Vector3());
     clippingPlanes[0].constant = parseFloat(e.target.value) + center[activeClipAxis];
+});
+
+function setViewMode(mode) {
+    viewModeButtons.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    modelGroup.traverse(child => {
+        if (child.isMesh) {
+            if (mode === 'solid') {
+                child.material = child.userData.originalMaterial;
+                child.material.wireframe = false;
+            } else if (mode === 'wireframe') {
+                child.material = child.userData.originalMaterial;
+                child.material.wireframe = true;
+            } else if (mode === 'surface') {
+                child.material = child.userData.normalMaterial;
+            }
+        }
+    });
+}
+
+viewModeButtons.forEach(btn => {
+    btn.addEventListener('click', () => setViewMode(btn.dataset.mode));
 });
 
 selector.addEventListener('change', () => selector.value && loadFromURL(selector.value));
