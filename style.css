@@ -75,15 +75,15 @@ select {
 .toolbar-group { display: flex; align-items: center; gap: 8px; }
 .label-for-check { font-size: 14px; color: var(--text-muted); user-select: none; cursor: pointer; }
 
-.toolbar button, .axis-btn {
+.toolbar button, .axis-btn, .view-mode-btn {
   padding: 8px 12px; font-size: 14px; font-weight: 500;
   border: 1px solid var(--border-color); border-radius: 6px;
   background-color: var(--button-bg); color: var(--text-color);
   cursor: pointer; transition: background-color 0.2s ease, border-color 0.2s ease;
 }
 #screenshot-btn { font-size: 18px; padding: 6px 10px; }
-.toolbar button:hover, .axis-btn:hover { background-color: var(--button-hover-bg); }
-.toolbar button.active, .axis-btn.active { border-color: var(--accent-color); color: var(--accent-color); }
+.toolbar button:hover, .axis-btn:hover, .view-mode-btn:hover { background-color: var(--button-hover-bg); }
+.toolbar button.active, .axis-btn.active, .view-mode-btn.active { border-color: var(--accent-color); color: var(--accent-color); }
 
 #clipping-controls { display: flex; flex-wrap: wrap; gap: 15px; align-items: center; flex-grow: 1; }
 #clipping-controls.hidden { display: none; }
