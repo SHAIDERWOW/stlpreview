@@ -88,14 +88,13 @@ function processLoadedObject(object) {
         if (child.isMesh) {
             partsCount++;
             
-            // Armazena o material original e cria materiais alternativos se não existirem
             child.userData.originalMaterial = child.material;
             if (!child.userData.normalMaterial) {
                 child.userData.normalMaterial = new THREE.MeshNormalMaterial({ clippingPlanes: clippingPlanes, clipShadows: true });
             }
             if (!child.material || child.material.name === '' || child.material.isDefault) {
                 child.material = new THREE.MeshStandardMaterial({ userData: { isDefaultMaterial: true } });
-                child.userData.originalMaterial = child.material; // Atualiza o original para o nosso padrão
+                child.userData.originalMaterial = child.material;
             }
 
             child.material.clippingPlanes = clippingPlanes;
