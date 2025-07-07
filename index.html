@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="https://glitch.com/favicon.ico" />
-    <title>Visualizador 3D - UFR</title>
+    <title>Visualizador 3D v2.0</title>
 
     <script type="importmap">
       {
@@ -20,20 +20,21 @@
 </head>
 <body>
     <div class="container">
-        <h1>Visualizador 3D muito bom que serve para visualizar em 3D os arquivos que não dá de visualizar sem um visualizador 3D</h1>
-        <p>Selecione um modelo da lista ou arraste um arquivo (.STL) para a área de visualização.</p>
+        <h1>Visualizador 3D Avançado v2.0</h1>
+        <p>Selecione um modelo da lista ou arraste um arquivo (.STL, .3MF, .glTF, .glb) para a área de visualização.</p>
 
         <select id="stl-selector">
             <option value="">-- Selecione um modelo da lista --</option>
             <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Montagem%20final.stl?v=1750269750409">PROJETO COMPLETO (Apenas para visualização)</option>
-            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%201.stl?v=1750219411177">Item 1 - Volante</option>
+            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%201.stl?v=1750439272881">Item 1 - Volante</option>
             <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%202%20-%20V2.stl?v=1750219431712">Item 2 - Carro móvel</option>
-            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%203.stl?v=1750219436971">Item 3 - Tampa do carro</option>
-            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%204.stl?v=1750219439709">Item 4 - Peça 4</option>
-            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%205.stl?v=1750219442386">Item 5 - Peça 5</option>
-            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%207.stl?v=1750219446455">Item 7 - Peça 7</option>
-            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%208.stl?v=1750219449527">Item 8 - Peça 8</option>
+            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%203.stl?v=1750219436971">Item 3 - Tampa do Carro</option>
+            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%204.stl?v=1750219439709">Item 4 - Base Inferior + Bloco de Apoio da Célula</option>
+            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%205.stl?v=1750219442386">Item 5 - Base Superior</option>
+            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%207.stl?v=1750219446455">Item 7 - Bloco Limitador da Célula</option>
+            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%208.stl?v=1750219449527">Item 8 - Suporte dos Roletes</option>
             <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%209%20-%20V2.stl?v=1750219453038">Item 9 - Estrutura do LCD</option>
+            <option value="https://cdn.glitch.global/deeb5089-a19c-43a1-954b-3724956ed2cd/Shaider%20-%20Item%2010.stl?v=1750439267443">Item 10 - Bandeja</option>
         </select>
         
         <div class="toolbar">
@@ -50,6 +51,26 @@
                 <button id="clear-measure-btn">Limpar</button>
             </div>
             <button id="reset-view-btn">Resetar Vista</button>
+            <button id="screenshot-btn" title="Capturar Tela">📸</button>
+        </div>
+
+        <!-- NOVA SEÇÃO PARA PLANO DE CORTE -->
+        <div class="toolbar-section">
+            <div class="toolbar-group">
+                <input type="checkbox" id="clipping-toggle">
+                <label for="clipping-toggle" class="label-for-check">Ativar Corte</label>
+            </div>
+            <div id="clipping-controls" class="hidden">
+                <div class="toolbar-group axis-buttons">
+                    <label class="label-for-check">Eixo:</label>
+                    <button class="axis-btn active" data-axis="x">X</button>
+                    <button class="axis-btn" data-axis="y">Y</button>
+                    <button class="axis-btn" data-axis="z">Z</button>
+                </div>
+                <div class="toolbar-group clipping-slider-group">
+                    <input type="range" id="clipping-slider" min="-1" max="1" step="0.01" value="0">
+                </div>
+            </div>
         </div>
 
         <div id="viewer-container">
@@ -58,18 +79,25 @@
             <div id="loader-overlay" class="hidden"><div class="loader-spinner"></div><div class="drag-text"></div></div>
         </div>
 
-        <div class="info-section">
-             <div class="info-item">
-                <span>Dimensões (mm)</span>
-                <strong id="model-dims">X: -, Y: -, Z: -</strong>
+        <div class="info-and-parts-container">
+            <div class="info-section">
+                 <div class="info-item">
+                    <span>Dimensões (mm)</span>
+                    <strong id="model-dims">X: -, Y: -, Z: -</strong>
+                </div>
+                <div class="info-item">
+                    <span>Volume (cm³)</span>
+                    <strong id="model-volume">-</strong>
+                </div>
+                <div class="info-item">
+                    <span>Área (cm²)</span>
+                    <strong id="model-area">-</strong>
+                </div>
             </div>
-            <div class="info-item">
-                <span>Volume (cm³)</span>
-                <strong id="model-volume">-</strong>
-            </div>
-            <div class="info-item">
-                <span>Área (cm²)</span>
-                <strong id="model-area">-</strong>
+            
+            <div class="parts-section hidden">
+                <h2 id="parts-section-title">Peças da Montagem</h2>
+                <ul id="parts-list"></ul>
             </div>
         </div>
 
@@ -103,6 +131,19 @@
             </div>
             <div class="estimator-result">
                 Tempo Estimado: <span id="time-estimate">N/A</span>
+            </div>
+        </div>
+        
+        <div id="screenshot-modal-overlay" class="hidden">
+            <div class="modal-content">
+                <h3>Opções de Captura (FullHD)</h3>
+                <p>Selecione a cor de fundo para a sua imagem.</p>
+                <div class="modal-btn-group">
+                    <button class="modal-btn" data-bg="transparent">Transparente</button>
+                    <button class="modal-btn" data-bg="black">Preto</button>
+                    <button class="modal-btn" data-bg="white">Branco</button>
+                </div>
+                <button id="cancel-screenshot-btn" class="modal-btn-cancel">Cancelar</button>
             </div>
         </div>
     </div>
