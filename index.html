@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/favicon.ico" />
-    <title>Visualizador 3D v2.4</title>
+    <title>Visualizador 3D v3.0</title>
 
     <script type="importmap">
       {
@@ -19,59 +19,58 @@
     <script type="module" src="script.js" defer></script>
 </head>
 <body>
+    <div id="toast-container"></div>
+
     <div class="container">
         <h1>Visualizador 3D muito bom que serve para visualizar em 3D os arquivos que não dá de visualizar sem um visualizador 3D</h1>
-        <p>Selecione um modelo da lista ou arraste um arquivo (.STL, .3MF, .glTF, .glb) para a área de visualização.</p>
+        <p>Selecione um modelo da lista ou arraste um arquivo (<strong>.STL</strong>, <strong>.3MF</strong>, <strong>.OBJ</strong>, <strong>.glTF</strong>, <strong>.glb</strong>) para a área de visualização.</p>
 
         <select id="stl-selector">
             <option value="">-- Selecione um modelo da lista --</option>
-            <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Montagem%20final.glb">PROJETO COMPLETO (Apenas para visualização)</option>
-            <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%201.stl">Item 1 - Volante</option>
-            <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%202%20-%20V2.stl">Item 2 - Carro móvel</option>
-            <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%203.stl">Item 3 - Tampa do Carro</option>
-            <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%204.stl">Item 4 - Base Inferior + Bloco de Apoio da Célula</option>
-            <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%205.stl">Item 5 - Base Superior</option>
-            <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%207.stl">Item 7 - Bloco Limitador da Célula</option>
-            <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%207%20-%20V2.stl">Item 7 - V2 - Bloco extensor</option>
-            <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%209%20-%20V2.stl">Item 9 - Estrutura do LCD</option>
-            <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%2010.stl">Item 10 - Bandeja</option>
+            <optgroup label="📁 FORÇÔMETRO">
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Montagem%20final.glb">↳ Projeto Completo (Apenas visualização)</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%201.stl">↳ Item 1 — Volante</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%202%20-%20V2.stl">↳ Item 2 — Carro móvel</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%203.stl">↳ Item 3 — Tampa do Carro</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%204.stl">↳ Item 4 — Base Inferior + Bloco de Apoio da Célula</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%205.stl">↳ Item 5 — Base Superior</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%207.stl">↳ Item 7 — Bloco Limitador da Célula</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%207%20-%20V2.stl">↳ Item 7 V2 — Bloco extensor</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%209%20-%20V2.stl">↳ Item 9 — Estrutura do LCD</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%2010.stl">↳ Item 10 — Bandeja</option>
+            </optgroup>
+            <optgroup label="📁 Bomba Radial">
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Rotor%20-%20Grupo%202.stl">↳ Rotor</option>
+            </optgroup>
         </select>
-        
+
+        <!-- Toolbar principal -->
         <div class="toolbar">
             <div class="toolbar-group">
-                <label class="theme-switch"><input type="checkbox" id="theme-toggle"><span class="slider round"></span></label>
-                <label class="label-for-check">Modo Escuro</label>
+                <label class="theme-switch">
+                    <input type="checkbox" id="theme-toggle">
+                    <span class="slider round"></span>
+                </label>
+                <label for="theme-toggle" class="label-for-check">Modo Escuro</label>
             </div>
             <div class="toolbar-group">
                 <input type="checkbox" id="grid-toggle">
                 <label for="grid-toggle" class="label-for-check">Grade</label>
             </div>
             <div class="toolbar-group">
-                <button id="measure-btn">Medir</button>
-                <button id="clear-measure-btn">Limpar</button>
+                <button id="measure-btn" title="Clique em dois pontos do modelo para medir">📏 Medir</button>
+                <button id="clear-measure-btn" title="Limpar medições">🗑️ Limpar</button>
             </div>
-            <button id="reset-view-btn">Resetar Vista</button>
-            <button id="screenshot-btn" title="Capturar Tela">📸</button>
-        </div>
-
-        <div class="toolbar-section">
             <div class="toolbar-group">
-                <input type="checkbox" id="clipping-toggle">
-                <label for="clipping-toggle" class="label-for-check">Ativar Corte</label>
+                <label class="label-for-check" for="model-color-input">🎨</label>
+                <input type="color" id="model-color-input" value="#cccccc" title="Cor do modelo (apenas materiais padrão)">
+                <button id="reset-color-btn" class="btn-icon" title="Restaurar cor padrão pelo tema">↺</button>
             </div>
-            <div id="clipping-controls" class="hidden">
-                <div class="toolbar-group axis-buttons">
-                    <label class="label-for-check">Eixo:</label>
-                    <button class="axis-btn active" data-axis="x">X</button>
-                    <button class="axis-btn" data-axis="y">Y</button>
-                    <button class="axis-btn" data-axis="z">Z</button>
-                </div>
-                <div class="toolbar-group clipping-slider-group">
-                    <input type="range" id="clipping-slider" min="-1" max="1" step="0.01" value="0">
-                </div>
-            </div>
+            <button id="reset-view-btn" title="Resetar Vista (R)">⟳ Vista</button>
+            <button id="screenshot-btn" title="Capturar Tela (S)">📸</button>
         </div>
 
+        <!-- Modo de Vista -->
         <div class="toolbar-section">
             <div class="toolbar-group view-mode-buttons">
                 <label class="label-for-check">Modo de Vista:</label>
@@ -81,15 +80,48 @@
             </div>
         </div>
 
+        <!-- Corte Transversal -->
+        <div class="toolbar-section clipping-section">
+            <div class="toolbar-group">
+                <input type="checkbox" id="clipping-toggle">
+                <label for="clipping-toggle" class="label-for-check">✂️ Corte Transversal</label>
+            </div>
+            <div id="clipping-controls" class="hidden">
+                <div class="clipping-inner">
+                    <div class="clipping-axis-row">
+                        <span class="label-for-check">Plano:</span>
+                        <button class="axis-btn active" data-axis="x">X</button>
+                        <button class="axis-btn" data-axis="y">Y</button>
+                        <button class="axis-btn" data-axis="z">Z</button>
+                        <span class="axis-hint">← corta no eixo selecionado</span>
+                    </div>
+                    <div class="clipping-slider-row">
+                        <span class="clip-limit-label">0%</span>
+                        <input type="range" id="clipping-slider" min="-1" max="1" step="0.01" value="1">
+                        <span class="clip-limit-label">100%</span>
+                        <span id="clipping-value-label" class="clipping-pct-badge">100%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Viewer -->
         <div id="viewer-container">
             <canvas id="c"></canvas>
             <div id="labels"></div>
-            <div id="loader-overlay" class="hidden"><div class="loader-spinner"></div><div class="drag-text"></div></div>
+            <div id="loader-overlay" class="hidden">
+                <div class="loader-spinner"></div>
+                <div class="loader-progress-wrap">
+                    <div class="loader-progress-bar" id="loader-progress"></div>
+                </div>
+                <div class="loader-status-text" id="loader-status">Carregando...</div>
+            </div>
         </div>
 
+        <!-- Info + Peças -->
         <div class="info-and-parts-container">
             <div class="info-section">
-                 <div class="info-item">
+                <div class="info-item">
                     <span>Dimensões (mm)</span>
                     <strong id="model-dims">X: -, Y: -, Z: -</strong>
                 </div>
@@ -102,13 +134,23 @@
                     <strong id="model-area">-</strong>
                 </div>
             </div>
-            
+
             <div class="parts-section hidden">
                 <h2 id="parts-section-title">Peças da Montagem</h2>
                 <ul id="parts-list"></ul>
             </div>
         </div>
 
+        <!-- Explodir Montagem -->
+        <div id="explode-section" class="toolbar-section hidden">
+            <div class="explode-row">
+                <span class="label-for-check" style="white-space:nowrap">💥 Explodir Montagem</span>
+                <input type="range" id="explode-slider" min="0" max="2" step="0.05" value="0">
+                <span id="explode-value" class="clipping-pct-badge">0.00</span>
+            </div>
+        </div>
+
+        <!-- Estimativa de Impressão -->
         <div class="estimator-section">
             <h2>Estimativa de Tempo de Impressão (Beta)</h2>
             <div class="disclaimer">
@@ -136,23 +178,35 @@
                         <input type="number" id="walls-input" min="0.3" max="2.5" step="0.1" value="0.3">
                     </div>
                 </div>
+                <div class="control-item">
+                    <label for="print-speed-slider">Velocidade (mm/s)</label>
+                    <div class="slider-group">
+                        <input type="range" id="print-speed-slider" min="20" max="200" step="5" value="60">
+                        <input type="number" id="print-speed-input" min="20" max="200" step="5" value="60">
+                    </div>
+                </div>
             </div>
             <div class="estimator-result">
                 Tempo Estimado: <span id="time-estimate">N/A</span>
             </div>
         </div>
-        
-        <div id="screenshot-modal-overlay" class="hidden">
-            <div class="modal-content">
-                <h3>Opções de Captura (FullHD)</h3>
-                <p>Selecione a cor de fundo para a sua imagem.</p>
-                <div class="modal-btn-group">
-                    <button class="modal-btn" data-bg="transparent">Transparente</button>
-                    <button class="modal-btn" data-bg="black">Preto</button>
-                    <button class="modal-btn" data-bg="white">Branco</button>
-                </div>
-                <button id="cancel-screenshot-btn" class="modal-btn-cancel">Cancelar</button>
+
+        <div class="keyboard-hint">
+            Atalhos: <kbd>R</kbd> Resetar vista &nbsp;·&nbsp; <kbd>G</kbd> Grade &nbsp;·&nbsp; <kbd>S</kbd> Screenshot
+        </div>
+    </div>
+
+    <!-- Modal de Screenshot — FORA do .container, com position:fixed -->
+    <div id="screenshot-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3>Opções de Captura (FullHD)</h3>
+            <p>Selecione a cor de fundo para a sua imagem.</p>
+            <div class="modal-btn-group">
+                <button class="modal-btn" data-bg="transparent">Transparente</button>
+                <button class="modal-btn" data-bg="black">Preto</button>
+                <button class="modal-btn" data-bg="white">Branco</button>
             </div>
+            <button id="cancel-screenshot-btn" class="modal-btn-cancel">Cancelar</button>
         </div>
     </div>
 </body>
