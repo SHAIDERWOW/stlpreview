@@ -2,7 +2,7 @@
 
 Um visualizador 3D prático, rápido e interativo que roda diretamente no seu navegador. Ideal para analisar modelos tridimensionais e peças para impressão 3D sem a necessidade de baixar ou instalar nenhum software.
 
-🌍 **Acesse o site:** [Insira o link do seu site aqui, ex: https://seu-usuario.github.io/stlpreview/]
+🌍 **Acesse o site:** https://shaiderwow.github.io/stlpreview/
 
 ## ✨ Funcionalidades Principais
 
