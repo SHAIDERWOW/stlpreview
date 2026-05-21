@@ -4,8 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" href="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/favicon.ico" />
-    <title>Visualizador 3D v3.0</title>
-
+    <title>Visualizador 3D v3.2</title>
     <script type="importmap">
       {
         "imports": {
@@ -14,7 +13,6 @@
         }
       }
     </script>
-
     <link rel="stylesheet" href="style.css" />
     <script type="module" src="script.js" defer></script>
 </head>
@@ -23,27 +21,66 @@
 
     <div class="container">
         <h1>Visualizador 3D muito bom que serve para visualizar em 3D os arquivos que não dá de visualizar sem um visualizador 3D</h1>
-        <p>Selecione um modelo da lista ou arraste um arquivo (<strong>.STL</strong>, <strong>.3MF</strong>, <strong>.OBJ</strong>, <strong>.glTF</strong>, <strong>.glb</strong>) para a área de visualização.</p>
+        <p>Selecione um modelo da lista ou arraste um arquivo (<strong>.STL</strong>, <strong>.3MF</strong>, <strong>.OBJ</strong>, <strong>.STEP</strong>, <strong>.glTF</strong>, <strong>.glb</strong>) para a área de visualização.</p>
 
-        <select id="stl-selector">
-            <option value="">-- Selecione um modelo da lista --</option>
-            <optgroup label="📁 FORÇÔMETRO">
-                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Montagem%20final.glb">↳ Projeto Completo (Apenas visualização)</option>
-                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%201.stl">↳ Item 1 — Volante</option>
-                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%202%20-%20V2.stl">↳ Item 2 — Carro móvel</option>
-                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%203.stl">↳ Item 3 — Tampa do Carro</option>
-                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%204.stl">↳ Item 4 — Base Inferior + Bloco de Apoio da Célula</option>
-                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%205.stl">↳ Item 5 — Base Superior</option>
-                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%207.stl">↳ Item 7 — Bloco Limitador da Célula</option>
-                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%207%20-%20V2.stl">↳ Item 7 V2 — Bloco extensor</option>
-                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%209%20-%20V2.stl">↳ Item 9 — Estrutura do LCD</option>
-                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%2010.stl">↳ Item 10 — Bandeja</option>
+        <!-- Hidden native select (used by JS for value/event) -->
+        <select id="stl-selector" style="display:none">
+            <option value="">-- Selecione --</option>
+            <optgroup label="FORÇÔMETRO">
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Montagem%20final.glb">Projeto Completo</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%201.stl">Item 1 — Volante</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%202%20-%20V2.stl">Item 2 — Carro móvel</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%203.stl">Item 3 — Tampa do Carro</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%204.stl">Item 4 — Base Inferior</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%205.stl">Item 5 — Base Superior</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%207.stl">Item 7 — Bloco Limitador</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%207%20-%20V2.stl">Item 7 V2 — Bloco extensor</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%209%20-%20V2.stl">Item 9 — Estrutura do LCD</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%2010.stl">Item 10 — Bandeja</option>
             </optgroup>
-            <optgroup label="📁 Bomba Radial">
-                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Rotor%20-%20Grupo%202.stl">↳ Rotor</option>
-                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Voluta%20-%20Grupo%202.stl">↳ Voluta</option>
+            <optgroup label="Bomba Radial">
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Rotor%20-%20Grupo%202.stl">Rotor</option>
+                <option value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Voluta%20-%20Grupo%202.stl">Voluta</option>
             </optgroup>
         </select>
+
+        <!-- Custom collapsible dropdown -->
+        <div id="custom-select" class="custom-select">
+            <div class="custom-select-trigger" id="custom-select-trigger">
+                <span id="custom-select-label">-- Selecione um modelo da lista --</span>
+                <span class="custom-select-caret">▾</span>
+            </div>
+            <div class="custom-select-panel hidden" id="custom-select-panel">
+                <div class="custom-optgroup">
+                    <div class="optgroup-header" data-group="forcometro">
+                        <span class="group-arrow">▼</span>
+                        <span>📁 FORÇÔMETRO</span>
+                    </div>
+                    <div class="optgroup-items" id="group-forcometro">
+                        <div class="custom-option" data-value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Montagem%20final.glb">↳ Projeto Completo (Apenas visualização)</div>
+                        <div class="custom-option" data-value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%201.stl">↳ Item 1 — Volante</div>
+                        <div class="custom-option" data-value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%202%20-%20V2.stl">↳ Item 2 — Carro móvel</div>
+                        <div class="custom-option" data-value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%203.stl">↳ Item 3 — Tampa do Carro</div>
+                        <div class="custom-option" data-value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%204.stl">↳ Item 4 — Base Inferior + Bloco de Apoio</div>
+                        <div class="custom-option" data-value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%205.stl">↳ Item 5 — Base Superior</div>
+                        <div class="custom-option" data-value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%207.stl">↳ Item 7 — Bloco Limitador da Célula</div>
+                        <div class="custom-option" data-value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%207%20-%20V2.stl">↳ Item 7 V2 — Bloco extensor</div>
+                        <div class="custom-option" data-value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%209%20-%20V2.stl">↳ Item 9 — Estrutura do LCD</div>
+                        <div class="custom-option" data-value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Shaider%20-%20Item%2010.stl">↳ Item 10 — Bandeja</div>
+                    </div>
+                </div>
+                <div class="custom-optgroup">
+                    <div class="optgroup-header" data-group="bomba">
+                        <span class="group-arrow">▼</span>
+                        <span>📁 Bomba Radial</span>
+                    </div>
+                    <div class="optgroup-items" id="group-bomba">
+                        <div class="custom-option" data-value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Rotor%20-%20Grupo%202.stl">↳ Rotor</div>
+                        <div class="custom-option" data-value="https://raw.githubusercontent.com/SHAIDERWOW/stlpreview/main/Assets/Voluta%20-%20Grupo%202.stl">↳ Voluta</div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Toolbar principal -->
         <div class="toolbar">
@@ -59,13 +96,13 @@
                 <label for="grid-toggle" class="label-for-check">Grade</label>
             </div>
             <div class="toolbar-group">
-                <button id="measure-btn" title="Clique em dois pontos do modelo para medir">📏 Medir</button>
+                <button id="measure-btn" title="Ativar medição (M) — navegue livremente, clique para medir">📏 Medir</button>
                 <button id="clear-measure-btn" title="Limpar medições">🗑️ Limpar</button>
             </div>
             <div class="toolbar-group">
                 <label class="label-for-check" for="model-color-input">🎨</label>
-                <input type="color" id="model-color-input" value="#cccccc" title="Cor do modelo (apenas materiais padrão)">
-                <button id="reset-color-btn" class="btn-icon" title="Restaurar cor padrão pelo tema">↺</button>
+                <input type="color" id="model-color-input" value="#cccccc" title="Cor do modelo">
+                <button id="reset-color-btn" class="btn-icon" title="Restaurar cor padrão">↺</button>
             </div>
             <button id="reset-view-btn" title="Resetar Vista (R)">⟳ Vista</button>
             <button id="screenshot-btn" title="Capturar Tela (S)">📸</button>
@@ -94,7 +131,7 @@
                         <button class="axis-btn active" data-axis="x">X</button>
                         <button class="axis-btn" data-axis="y">Y</button>
                         <button class="axis-btn" data-axis="z">Z</button>
-                        <span class="axis-hint">← corta no eixo selecionado</span>
+                        <span class="axis-hint">← arraste para cortar</span>
                     </div>
                     <div class="clipping-slider-row">
                         <span class="clip-limit-label">0%</span>
@@ -110,6 +147,9 @@
         <div id="viewer-container">
             <canvas id="c"></canvas>
             <div id="labels"></div>
+            <div id="measure-hint" class="measure-hint hidden">
+                📏 Clique/toque no modelo para medir &nbsp;·&nbsp; Navegue livremente &nbsp;·&nbsp; <kbd>Esc</kbd> cancela
+            </div>
             <div id="loader-overlay" class="hidden">
                 <div class="loader-spinner"></div>
                 <div class="loader-progress-wrap">
@@ -124,18 +164,17 @@
             <div class="info-section">
                 <div class="info-item">
                     <span>Dimensões (mm)</span>
-                    <strong id="model-dims">X: -, Y: -, Z: -</strong>
+                    <strong id="model-dims">—</strong>
                 </div>
                 <div class="info-item">
                     <span>Volume (cm³)</span>
-                    <strong id="model-volume">-</strong>
+                    <strong id="model-volume">—</strong>
                 </div>
                 <div class="info-item">
                     <span>Área (cm²)</span>
-                    <strong id="model-area">-</strong>
+                    <strong id="model-area">—</strong>
                 </div>
             </div>
-
             <div class="parts-section hidden">
                 <h2 id="parts-section-title">Peças da Montagem</h2>
                 <ul id="parts-list"></ul>
@@ -151,53 +190,58 @@
             </div>
         </div>
 
-        <!-- Estimativa de Impressão -->
-        <div class="estimator-section">
-            <h2>Estimativa de Tempo de Impressão (Beta)</h2>
-            <div class="disclaimer">
-                <strong>Atenção:</strong> Esta é uma estimativa aproximada e não substitui um fatiador (slicer) configurado para sua impressora.
+        <!-- Estimativa de Impressão (Acordeão) -->
+        <div class="estimator-section accordion-section" id="estimator-section">
+            <div class="accordion-header" id="estimator-header">
+                <h2>Estimativa de Tempo de Impressão (Beta)</h2>
+                <span class="accordion-arrow">▼</span>
             </div>
-            <div class="estimator-controls">
-                <div class="control-item">
-                    <label for="resolution-slider">Resolução (mm)</label>
-                    <div class="slider-group">
-                        <input type="range" id="resolution-slider" min="0.08" max="0.4" step="0.02" value="0.2">
-                        <input type="number" id="resolution-input" min="0.08" max="0.4" step="0.02" value="0.2">
+            <div class="accordion-body" id="estimator-body">
+                <div class="disclaimer">
+                    <strong>Atenção:</strong> Esta é uma estimativa aproximada e não substitui um fatiador (slicer).
+                </div>
+                <div class="estimator-controls">
+                    <div class="control-item">
+                        <label for="resolution-slider">Resolução (mm)</label>
+                        <div class="slider-group">
+                            <input type="range" id="resolution-slider" min="0.08" max="0.4" step="0.02" value="0.2">
+                            <input type="number" id="resolution-input" min="0.08" max="0.4" step="0.02" value="0.2">
+                        </div>
+                    </div>
+                    <div class="control-item">
+                        <label for="infill-slider">Preenchimento (%)</label>
+                        <div class="slider-group">
+                            <input type="range" id="infill-slider" min="0" max="100" step="5" value="20">
+                            <input type="number" id="infill-input" min="0" max="100" step="5" value="20">
+                        </div>
+                    </div>
+                    <div class="control-item">
+                        <label for="walls-slider">Paredes (mm)</label>
+                        <div class="slider-group">
+                            <input type="range" id="walls-slider" min="0.3" max="2.5" step="0.1" value="0.3">
+                            <input type="number" id="walls-input" min="0.3" max="2.5" step="0.1" value="0.3">
+                        </div>
+                    </div>
+                    <div class="control-item">
+                        <label for="print-speed-slider">Velocidade (mm/s)</label>
+                        <div class="slider-group">
+                            <input type="range" id="print-speed-slider" min="20" max="200" step="5" value="60">
+                            <input type="number" id="print-speed-input" min="20" max="200" step="5" value="60">
+                        </div>
                     </div>
                 </div>
-                <div class="control-item">
-                    <label for="infill-slider">Preenchimento (%)</label>
-                    <div class="slider-group">
-                        <input type="range" id="infill-slider" min="0" max="100" step="5" value="20">
-                        <input type="number" id="infill-input" min="0" max="100" step="5" value="20">
-                    </div>
+                <div class="estimator-result">
+                    Tempo Estimado: <span id="time-estimate">N/A</span>
                 </div>
-                <div class="control-item">
-                    <label for="walls-slider">Paredes (mm)</label>
-                    <div class="slider-group">
-                        <input type="range" id="walls-slider" min="0.3" max="2.5" step="0.1" value="0.3">
-                        <input type="number" id="walls-input" min="0.3" max="2.5" step="0.1" value="0.3">
-                    </div>
-                </div>
-                <div class="control-item">
-                    <label for="print-speed-slider">Velocidade (mm/s)</label>
-                    <div class="slider-group">
-                        <input type="range" id="print-speed-slider" min="20" max="200" step="5" value="60">
-                        <input type="number" id="print-speed-input" min="20" max="200" step="5" value="60">
-                    </div>
-                </div>
-            </div>
-            <div class="estimator-result">
-                Tempo Estimado: <span id="time-estimate">N/A</span>
             </div>
         </div>
 
         <div class="keyboard-hint">
-            Atalhos: <kbd>R</kbd> Resetar vista &nbsp;·&nbsp; <kbd>G</kbd> Grade &nbsp;·&nbsp; <kbd>S</kbd> Screenshot
+            Atalhos: <kbd>R</kbd> Resetar vista &nbsp;·&nbsp; <kbd>G</kbd> Grade &nbsp;·&nbsp; <kbd>M</kbd> Medir &nbsp;·&nbsp; <kbd>S</kbd> Screenshot &nbsp;·&nbsp; <kbd>Esc</kbd> Cancelar medição
         </div>
     </div>
 
-    <!-- Modal de Screenshot — FORA do .container, com position:fixed -->
+    <!-- Modal Screenshot — position:fixed fora do container -->
     <div id="screenshot-modal-overlay" class="modal-overlay hidden">
         <div class="modal-content">
             <h3>Opções de Captura (FullHD)</h3>
